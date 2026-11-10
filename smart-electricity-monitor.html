@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Electricity Usage Monitor</title>
+  <style>
+    :root { --bg:#f4f7fb; --card:#fff; --ink:#172033; --muted:#687386; --blue:#2563eb; --green:#15803d; --amber:#b45309; --red:#b91c1c; --line:#e5eaf2; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--ink); }
+    header { background:linear-gradient(120deg,#123a75,#2563eb); color:white; padding:28px 20px; }
+    .wrap { max-width:1050px; margin:auto; }
+    h1 { margin:0 0 8px; font-size:clamp(24px,4vw,34px); }
+    header p { margin:0; color:#dbeafe; }
+    main { padding:24px 16px 40px; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 5px 18px rgba(22,34,55,.04); }
+    .metric-label { color:var(--muted); font-size:14px; }
+    .metric { font-size:30px; font-weight:700; margin-top:8px; }
+    .unit { color:var(--muted); font-size:14px; font-weight:400; }
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    h2 { margin:0 0 16px; font-size:19px; }
+    label { display:block; font-size:14px; color:var(--muted); margin:13px 0 6px; }
+    input { width:100%; padding:12px; border:1px solid #cfd7e4; border-radius:9px; font-size:16px; }
+    button { border:0; border-radius:9px; background:var(--blue); color:white; padding:12px 16px; font-weight:700; cursor:pointer; margin-top:14px; }
+    button:hover { filter:brightness(.94); }
+    button.secondary { background:#e9eef8; color:#24334d; }
+    .status { padding:13px; border-radius:10px; background:#eff6ff; color:#1e40af; line-height:1.5; }
+    .bar-bg { background:#e8edf5; height:13px; border-radius:20px; overflow:hidden; margin:14px 0 8px; }
+    .bar { height:100%; width:0; background:var(--green); transition:width .25s; }
+    .small { font-size:13px; color:var(--muted); line-height:1.5; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { text-align:left; padding:11px 8px; border-bottom:1px solid var(--line); }
+    th { color:var(--muted); font-weight:600; }
+    .empty { color:var(--muted); padding:14px 0; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .actions button { margin-top:0; }
+    footer { text-align:center; padding:18px; color:var(--muted); font-size:12px; }
+    @media(max-width:720px) { .grid,.layout { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Smart Electricity Usage Monitor</h1>
+    <p>Track your monthly electricity consumption and keep an eye on the 200-unit limit.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section class="grid">
+    <div class="card"><div class="metric-label">This month's usage</div><div class="metric" id="usage">0 <span class="unit">units</span></div></div>
+    <div class="card"><div class="metric-label">Units remaining to 200</div><div class="metric" id="remaining">200 <span class="unit">units</span></div></div>
+    <div class="card"><div class="metric-label">Estimated usage status</div><div class="metric" id="statusMetric">Within limit</div></div>
+  </section>
+
+  <section class="layout">
+    <div class="card">
+      <h2>Add meter reading</h2>
+      <p class="small">Enter the cumulative reading shown on your electricity meter. Add readings periodically; usage is calculated from the difference between readings.</p>
+      <label for="reading">Current meter reading (kWh / units)</label>
+      <input id="reading" type="number" min="0" step="0.01" placeholder="Example: 1250">
+      <label for="date">Reading date</label>
+      <input id="date" type="date">
+      <button id="addBtn">Add reading</button>
+      <p id="message" class="small" role="status"></p>
+    </div>
+
+    <div class="card">
+      <h2>200-unit monitor</h2>
+      <div class="status" id="statusBox">Add your first meter reading to begin tracking.</div>
+      <div class="bar-bg"><div class="bar" id="usageBar"></div></div>
+      <div class="small" id="barText">0 of 200 units used</div>
+      <p class="small">This is a consumption tracker, not an official eligibility checker. Actual Telangana Gruha Jyothi benefits depend on applicable scheme rules and eligibility.</p>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <div class="actions" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Reading history</h2>
+      <button class="secondary" id="clearBtn" type="button">Clear history</button>
+    </div>
+    <div id="historyWrap" style="overflow-x:auto;margin-top:12px">
+      <p class="empty">No readings added yet.</p>
+    </div>
+  </section>
+  <footer>Data is stored only in this browser using local storage. Clearing browser data or changing devices may remove your history.</footer>
+</main>
+<script>
+(() => {
+  const KEY = "smartElectricityReadingsV1";
+  const $ = id => document.getElementById(id);
+  let readings = [];
+  try { readings = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch { readings = []; }
+
+  const today = new Date();
+  $("date").value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+  function save() { localStorage.setItem(KEY, JSON.stringify(readings)); }
+  function monthKey(date) { return date.slice(0,7); }
+  function monthUsage() {
+    if (!readings.length) return 0;
+    const currentMonth = $("date").value.slice(0,7) || monthKey(new Date().toISOString().slice(0,10));
+    const sorted = [...readings].sort((a,b) => a.date.localeCompare(b.date) || a.id-b.id);
+    const inMonth = sorted.filter(r => monthKey(r.date) === currentMonth);
+    if (!inMonth.length) return 0;
+    const firstIndex = sorted.findIndex(r => r.id === inMonth[0].id);
+    const previous = firstIndex > 0 ? sorted[firstIndex-1].value : inMonth[0].value;
+    return Math.max(0, inMonth[inMonth.length-1].value - previous);
+  }
+  function render() {
+    const usage = monthUsage();
+    const remaining = Math.max(0, 200-usage);
+    $("usage").innerHTML = `${usage.toFixed(2)} <span class="unit">units</span>`;
+    $("remaining").innerHTML = `${remaining.toFixed(2)} <span class="unit">units</span>`;
+    const over = usage > 200;
+    $("statusMetric").textContent = over ? "Above 200 units" : "Within limit";
+    $("statusMetric").style.color = over ? "var(--red)" : "var(--green)";
+    $("statusBox").textContent = readings.length === 0
+      ? "Add your first meter reading to begin tracking."
+      : over ? `You have used ${(usage-200).toFixed(2)} units above the 200-unit reference limit.`
+      : `You have used ${usage.toFixed(2)} units. You are ${remaining.toFixed(2)} units below the 200-unit reference limit.`;
+    $("usageBar").style.width = `${Math.min(100, usage/200*100)}%`;
+    $("usageBar").style.background = over ? "var(--red)" : usage >= 160 ? "#d97706" : "var(--green)";
+    $("barText").textContent = `${usage.toFixed(2)} of 200 units used${over ? " (limit exceeded)" : ""}`;
+
+    const sorted = [...readings].sort((a,b) => b.date.localeCompare(a.date) || b.id-a.id);
+    if (!sorted.length) {
+      $("historyWrap").innerHTML = '<p class="empty">No readings added yet.</p>';
+      return;
+    }
+    $("historyWrap").innerHTML = `<table><thead><tr><th>Date</th><th>Meter reading</th><th>Usage since previous entry</th></tr></thead><tbody>${
+      sorted.map(r => {
+        const asc = [...readings].sort((a,b) => a.date.localeCompare(b.date) || a.id-b.id);
+        const idx = asc.findIndex(x => x.id === r.id);
+        const diff = idx > 0 ? Math.max(0, r.value-asc[idx-1].value) : 0;
+        return `<tr><td>${r.date}</td><td>${r.value.toFixed(2)}</td><td>${diff.toFixed(2)} units</td></tr>`;
+      }).join("")
+    }</tbody></table>`;
+  }
+
+  $("addBtn").addEventListener("click", () => {
+    const value = Number($("reading").value);
+    const date = $("date").value;
+    if (!date || $("reading").value.trim() === "" || !Number.isFinite(value) || value < 0) {
+      $("message").textContent = "Please enter a valid date and non-negative meter reading.";
+      return;
+    }
+    const latest = [...readings].sort((a,b) => a.date.localeCompare(b.date)).at(-1);
+    if (latest && value < latest.value) {
+      $("message").textContent = "This reading is lower than the latest saved meter reading. Please check the value or meter reset.";
+      return;
+    }
+    readings.push({ id: Date.now(), date, value });
+    readings.sort((a,b) => a.date.localeCompare(b.date));
+    save();
+    $("reading").value = "";
+    $("message").textContent = "Reading saved in this browser.";
+    render();
+  });
+
+  $("clearBtn").addEventListener("click", () => {
+    if (!confirm("Delete all saved meter readings from this browser?")) return;
+    readings = [];
+    save();
+    $("message").textContent = "History cleared.";
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
