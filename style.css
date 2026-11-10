@@ -1,0 +1,35 @@
+:root { --bg:#f4f7fb; --card:#fff; --ink:#172033; --muted:#687386; --blue:#2563eb; --green:#15803d; --amber:#b45309; --red:#b91c1c; --line:#e5eaf2; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Arial, sans-serif; background:var(--bg); color:var(--ink); }
+header { background:linear-gradient(120deg,#123a75,#2563eb); color:white; padding:28px 20px; }
+.wrap { max-width:1050px; margin:auto; }
+h1 { margin:0 0 8px; font-size:clamp(24px,4vw,34px); }
+header p { margin:0; color:#dbeafe; }
+main { padding:24px 16px 40px; }
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; box-shadow:0 5px 18px rgba(22,34,55,.04); }
+.metric-label { color:var(--muted); font-size:14px; }
+.metric { font-size:30px; font-weight:700; margin-top:8px; }
+.unit { color:var(--muted); font-size:14px; font-weight:400; }
+.layout { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+h2 { margin:0 0 16px; font-size:19px; }
+label { display:block; font-size:14px; color:var(--muted); margin:13px 0 6px; }
+input { width:100%; padding:12px; border:1px solid #cfd7e4; border-radius:9px; font-size:16px; }
+button { border:0; border-radius:9px; background:var(--blue); color:white; padding:12px 16px; font-weight:700; cursor:pointer; margin-top:14px; }
+button:hover { filter:brightness(.94); }
+button.secondary { background:#e9eef8; color:#24334d; }
+.status { padding:13px; border-radius:10px; background:#eff6ff; color:#1e40af; line-height:1.5; }
+.bar-bg { background:#e8edf5; height:13px; border-radius:20px; overflow:hidden; margin:14px 0 8px; }
+.bar { height:100%; width:0; background:var(--green); transition:width .25s; }
+.small { font-size:13px; color:var(--muted); line-height:1.5; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th,td { text-align:left; padding:11px 8px; border-bottom:1px solid var(--line); }
+th { color:var(--muted); font-weight:600; }
+.empty { color:var(--muted); padding:14px 0; }
+.actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+.actions button { margin-top:0; }
+.actions h2 { margin:0; }
+.history-card { margin-top:16px; }
+#historyWrap { overflow-x:auto; margin-top:12px; }
+footer { text-align:center; padding:18px; color:var(--muted); font-size:12px; }
+@media(max-width:720px) { .grid,.layout { grid-template-columns:1fr; } }

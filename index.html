@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Electricity Usage Monitor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Smart Electricity Usage Monitor</h1>
+    <p>Track your monthly electricity consumption and keep an eye on the 200-unit limit.</p>
+  </div>
+</header>
+<main class="wrap">
+  <section class="grid">
+    <div class="card"><div class="metric-label">This month's usage</div><div class="metric" id="usage">0 <span class="unit">units</span></div></div>
+    <div class="card"><div class="metric-label">Units remaining to 200</div><div class="metric" id="remaining">200 <span class="unit">units</span></div></div>
+    <div class="card"><div class="metric-label">Estimated usage status</div><div class="metric" id="statusMetric">Within limit</div></div>
+  </section>
+
+  <section class="layout">
+    <div class="card">
+      <h2>Add meter reading</h2>
+      <p class="small">Enter the cumulative reading shown on your electricity meter. Add readings periodically; usage is calculated from the difference between readings.</p>
+      <label for="reading">Current meter reading (kWh / units)</label>
+      <input id="reading" type="number" min="0" step="0.01" placeholder="Example: 1250">
+      <label for="date">Reading date</label>
+      <input id="date" type="date">
+      <button id="addBtn">Add reading</button>
+      <p id="message" class="small" role="status"></p>
+    </div>
+
+    <div class="card">
+      <h2>200-unit monitor</h2>
+      <div class="status" id="statusBox">Add your first meter reading to begin tracking.</div>
+      <div class="bar-bg"><div class="bar" id="usageBar"></div></div>
+      <div class="small" id="barText">0 of 200 units used</div>
+      <p class="small">This is a consumption tracker, not an official eligibility checker. Actual Telangana Gruha Jyothi benefits depend on applicable scheme rules and eligibility.</p>
+    </div>
+  </section>
+
+  <section class="card history-card">
+    <div class="actions">
+      <h2>Reading history</h2>
+      <button class="secondary" id="clearBtn" type="button">Clear history</button>
+    </div>
+    <div id="historyWrap">
+      <p class="empty">No readings added yet.</p>
+    </div>
+  </section>
+  <footer>Data is stored only in this browser using local storage. Clearing browser data or changing devices may remove your history.</footer>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
